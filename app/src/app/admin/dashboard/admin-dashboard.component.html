@@ -1,0 +1,18 @@
+<div class="admin-dashboard">
+  <div class="header">
+    <h1>Administration</h1>
+    <p>Manage your TermX application</p>
+  </div>
+  
+  <div class="modules-grid">
+    <div class="module-card" *ngFor="let module of adminModules" [routerLink]="module.route" privileged [privilege]="module.privilege">
+      <div class="module-icon">
+        <i class="fas fa-{{ module.icon }}"></i>
+      </div>
+      <div class="module-content">
+        <h3>{{ module.title }}</h3>
+        <p>{{ module.description }}</p>
+      </div>
+    </div>
+  </div>
+</div>

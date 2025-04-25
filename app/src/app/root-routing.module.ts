@@ -47,7 +47,11 @@ const APP_ROUTES: Routes = [
     ],
     data: {privilege: ['*.Space.view']}
   },
-  {path: 'info', loadComponent: () => import('./core/info/info.component')}
+  {path: 'info', loadComponent: () => import('./core/info/info.component')},
+  {path: 'admin', loadChildren: () => import('./admin/dashboard/admin-dashboard.module').then(m => m.AdminDashboardModule), data: {privilege: ['admin.view']}},
+  {path: 'admin/users', loadChildren: () => import('./admin/user-management/user-management.module').then(m => m.UserManagementModule), data: {privilege: ['admin.user.view']}},
+  {path: 'admin/providers', loadChildren: () => import('./admin/provider-management/provider-management.module').then(m => m.ProviderManagementModule), data: {privilege: ['admin.provider.view']}},
+  {path: 'admin/migration', loadChildren: () => import('./admin/migration/migration.module').then(m => m.MigrationModule), data: {privilege: ['admin.migration.execute']}}
 ];
 
 const routes: Routes = [
@@ -58,6 +62,8 @@ const routes: Routes = [
       {path: '', children: APP_ROUTES},
       {path: 'embedded', pathMatch: 'full', redirectTo: 'embedded/landing'},
       {path: 'embedded', children: APP_ROUTES},
+      {path: 'login', loadComponent: () => import('./core/auth/login/login.component').then(m => m.LoginComponent)},
+      {path: 'auth/callback', loadComponent: () => import('./core/auth/callback/callback.component').then(m => m.CallbackComponent)},
     ],
     component: AppComponent,
     // canActivate: [autoLoginGuard]

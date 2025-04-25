@@ -1,0 +1,338 @@
+<div class="provider-management-container">
+  <div class="provider-list-container">
+    <div class="header">
+      <h2>Identity Provider Management</h2>
+      <button class="btn btn-primary" (click)="createNewProvider()">
+        <i class="fas fa-plus"></i> New Provider
+      </button>
+    </div>
+    
+    <div class="provider-list" *ngIf="!isLoading; else loading">
+      <div class="provider-item" *ngFor="let provider of providers" 
+           [class.selected]="selectedProvider?.id === provider.id"
+           (click)="selectProvider(provider)">
+        <div class="provider-info">
+          <div class="name">{{ provider.name }}</div>
+          <div class="provider-id">{{ provider.providerId }}</div>
+          <div class="type">{{ provider.type }}</div>
+        </div>
+        <div class="provider-actions">
+          <div class="status" [class.enabled]="provider.enabled">
+            {{ provider.enabled ? 'Enabled' : 'Disabled' }}
+          </div>
+          <button class="btn btn-sm" 
+                  [class.btn-success]="!provider.enabled" 
+                  [class.btn-warning]="provider.enabled"
+                  (click)="toggleProviderStatus(provider); $event.stopPropagation()">
+            {{ provider.enabled ? 'Disable' : 'Enable' }}
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="deleteProvider(provider); $event.stopPropagation()">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div *ngIf="providers.length === 0" class="no-providers">
+        No identity providers found
+      </div>
+    </div>
+    
+    <ng-template #loading>
+      <div class="loading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span>Loading providers...</span>
+      </div>
+    </ng-template>
+  </div>
+  
+  <div class="provider-form-container" *ngIf="selectedProvider || !isEditing">
+    <h3>{{ isEditing ? 'Edit Provider' : 'Create Provider' }}</h3>
+    
+    <form [formGroup]="providerForm" (ngSubmit)="saveProvider()">
+      <div class="form-group">
+        <label for="providerId">Provider ID</label>
+        <input type="text" id="providerId" formControlName="providerId" class="form-control" 
+               [ngClass]="{ 'is-invalid': providerForm.controls['providerId'].touched && providerForm.controls['providerId'].invalid }">
+        <div *ngIf="providerForm.controls['providerId'].touched && providerForm.controls['providerId'].invalid" class="invalid-feedback">
+          <div *ngIf="providerForm.controls['providerId'].errors?.['required']">Provider ID is required</div>
+          <div *ngIf="providerForm.controls['providerId'].errors?.['pattern']">Provider ID must contain only lowercase letters, numbers, and hyphens</div>
+        </div>
+        <small class="form-text text-muted">Unique identifier for this provider (e.g., "google", "github", "azure-ad")</small>
+      </div>
+      
+      <div class="form-group">
+        <label for="name">Display Name</label>
+        <input type="text" id="name" formControlName="name" class="form-control"
+               [ngClass]="{ 'is-invalid': providerForm.controls['name'].touched && providerForm.controls['name'].invalid }">
+        <div *ngIf="providerForm.controls['name'].touched && providerForm.controls['name'].invalid" class="invalid-feedback">
+          <div *ngIf="providerForm.controls['name'].errors?.['required']">Display name is required</div>
+        </div>
+        <small class="form-text text-muted">User-friendly name shown on login page (e.g., "Google", "GitHub", "Microsoft")</small>
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" formControlName="description" class="form-control" rows="2"></textarea>
+        <small class="form-text text-muted">Optional description of this identity provider</small>
+      </div>
+      
+      <div class="form-group">
+        <label for="type">Provider Type</label>
+        <select id="type" formControlName="type" class="form-control" (change)="onProviderTypeChange(providerForm.value.type)">
+          <option *ngFor="let type of providerTypes" [value]="type">{{ type }}</option>
+        </select>
+        <small class="form-text text-muted">The type of identity provider protocol to use</small>
+      </div>
+      
+      <div class="form-group">
+        <div class="form-check">
+          <input type="checkbox" id="enabled" formControlName="enabled" class="form-check-input">
+          <label for="enabled" class="form-check-label">Enabled</label>
+        </div>
+        <small class="form-text text-muted">Whether this provider is available for authentication</small>
+      </div>
+      
+      <div class="config-section">
+        <h4>Provider Configuration</h4>
+        
+        <form [formGroup]="configForm">
+          <!-- OIDC Configuration -->
+          <ng-container *ngIf="providerForm.value.type === 'OIDC'">
+            <div class="form-group">
+              <label for="clientId">Client ID</label>
+              <input type="text" id="clientId" formControlName="clientId" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['clientId']?.touched && configForm.controls['clientId']?.invalid }">
+              <div *ngIf="configForm.controls['clientId']?.touched && configForm.controls['clientId']?.invalid" class="invalid-feedback">
+                Client ID is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="clientSecret">Client Secret</label>
+              <input type="password" id="clientSecret" formControlName="clientSecret" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['clientSecret']?.touched && configForm.controls['clientSecret']?.invalid }">
+              <div *ngIf="configForm.controls['clientSecret']?.touched && configForm.controls['clientSecret']?.invalid" class="invalid-feedback">
+                Client Secret is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="authorizationEndpoint">Authorization Endpoint</label>
+              <input type="text" id="authorizationEndpoint" formControlName="authorizationEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['authorizationEndpoint']?.touched && configForm.controls['authorizationEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['authorizationEndpoint']?.touched && configForm.controls['authorizationEndpoint']?.invalid" class="invalid-feedback">
+                Authorization Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="tokenEndpoint">Token Endpoint</label>
+              <input type="text" id="tokenEndpoint" formControlName="tokenEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['tokenEndpoint']?.touched && configForm.controls['tokenEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['tokenEndpoint']?.touched && configForm.controls['tokenEndpoint']?.invalid" class="invalid-feedback">
+                Token Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="userInfoEndpoint">User Info Endpoint</label>
+              <input type="text" id="userInfoEndpoint" formControlName="userInfoEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['userInfoEndpoint']?.touched && configForm.controls['userInfoEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['userInfoEndpoint']?.touched && configForm.controls['userInfoEndpoint']?.invalid" class="invalid-feedback">
+                User Info Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="scope">Scope</label>
+              <input type="text" id="scope" formControlName="scope" class="form-control">
+              <small class="form-text text-muted">Space-separated list of scopes (e.g., "openid profile email")</small>
+            </div>
+          </ng-container>
+          
+          <!-- OAuth2 Configuration -->
+          <ng-container *ngIf="providerForm.value.type === 'OAUTH2'">
+            <div class="form-group">
+              <label for="clientId">Client ID</label>
+              <input type="text" id="clientId" formControlName="clientId" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['clientId']?.touched && configForm.controls['clientId']?.invalid }">
+              <div *ngIf="configForm.controls['clientId']?.touched && configForm.controls['clientId']?.invalid" class="invalid-feedback">
+                Client ID is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="clientSecret">Client Secret (optional)</label>
+              <input type="password" id="clientSecret" formControlName="clientSecret" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label for="authorizationEndpoint">Authorization Endpoint</label>
+              <input type="text" id="authorizationEndpoint" formControlName="authorizationEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['authorizationEndpoint']?.touched && configForm.controls['authorizationEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['authorizationEndpoint']?.touched && configForm.controls['authorizationEndpoint']?.invalid" class="invalid-feedback">
+                Authorization Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="tokenEndpoint">Token Endpoint</label>
+              <input type="text" id="tokenEndpoint" formControlName="tokenEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['tokenEndpoint']?.touched && configForm.controls['tokenEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['tokenEndpoint']?.touched && configForm.controls['tokenEndpoint']?.invalid" class="invalid-feedback">
+                Token Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="userInfoEndpoint">User Info Endpoint</label>
+              <input type="text" id="userInfoEndpoint" formControlName="userInfoEndpoint" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['userInfoEndpoint']?.touched && configForm.controls['userInfoEndpoint']?.invalid }">
+              <div *ngIf="configForm.controls['userInfoEndpoint']?.touched && configForm.controls['userInfoEndpoint']?.invalid" class="invalid-feedback">
+                User Info Endpoint is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="scope">Scope</label>
+              <input type="text" id="scope" formControlName="scope" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label for="userIdField">User ID Field</label>
+              <input type="text" id="userIdField" formControlName="userIdField" class="form-control">
+              <small class="form-text text-muted">JSON field name for user ID in the user info response</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userEmailField">User Email Field</label>
+              <input type="text" id="userEmailField" formControlName="userEmailField" class="form-control">
+              <small class="form-text text-muted">JSON field name for email in the user info response</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userNameField">User Name Field</label>
+              <input type="text" id="userNameField" formControlName="userNameField" class="form-control">
+              <small class="form-text text-muted">JSON field name for display name in the user info response</small>
+            </div>
+          </ng-container>
+          
+          <!-- SAML Configuration -->
+          <ng-container *ngIf="providerForm.value.type === 'SAML'">
+            <div class="form-group">
+              <label for="entityId">Entity ID</label>
+              <input type="text" id="entityId" formControlName="entityId" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['entityId']?.touched && configForm.controls['entityId']?.invalid }">
+              <div *ngIf="configForm.controls['entityId']?.touched && configForm.controls['entityId']?.invalid" class="invalid-feedback">
+                Entity ID is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="metadataUrl">Metadata URL (optional)</label>
+              <input type="text" id="metadataUrl" formControlName="metadataUrl" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label for="assertionConsumerServiceUrl">Assertion Consumer Service URL</label>
+              <input type="text" id="assertionConsumerServiceUrl" formControlName="assertionConsumerServiceUrl" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['assertionConsumerServiceUrl']?.touched && configForm.controls['assertionConsumerServiceUrl']?.invalid }">
+              <div *ngIf="configForm.controls['assertionConsumerServiceUrl']?.touched && configForm.controls['assertionConsumerServiceUrl']?.invalid" class="invalid-feedback">
+                Assertion Consumer Service URL is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="singleSignOnServiceUrl">Single Sign-On Service URL</label>
+              <input type="text" id="singleSignOnServiceUrl" formControlName="singleSignOnServiceUrl" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['singleSignOnServiceUrl']?.touched && configForm.controls['singleSignOnServiceUrl']?.invalid }">
+              <div *ngIf="configForm.controls['singleSignOnServiceUrl']?.touched && configForm.controls['singleSignOnServiceUrl']?.invalid" class="invalid-feedback">
+                Single Sign-On Service URL is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="x509Certificate">X.509 Certificate</label>
+              <textarea id="x509Certificate" formControlName="x509Certificate" class="form-control" rows="3"></textarea>
+            </div>
+          </ng-container>
+          
+          <!-- LDAP Configuration -->
+          <ng-container *ngIf="providerForm.value.type === 'LDAP'">
+            <div class="form-group">
+              <label for="url">LDAP URL</label>
+              <input type="text" id="url" formControlName="url" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['url']?.touched && configForm.controls['url']?.invalid }">
+              <div *ngIf="configForm.controls['url']?.touched && configForm.controls['url']?.invalid" class="invalid-feedback">
+                LDAP URL is required
+              </div>
+              <small class="form-text text-muted">e.g., ldap://ldap.example.com:389</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="bindDn">Bind DN (optional)</label>
+              <input type="text" id="bindDn" formControlName="bindDn" class="form-control">
+              <small class="form-text text-muted">DN to bind with for searching users</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="bindCredential">Bind Credential (optional)</label>
+              <input type="password" id="bindCredential" formControlName="bindCredential" class="form-control">
+              <small class="form-text text-muted">Password for bind DN</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="searchBase">Search Base</label>
+              <input type="text" id="searchBase" formControlName="searchBase" class="form-control"
+                     [ngClass]="{ 'is-invalid': configForm.controls['searchBase']?.touched && configForm.controls['searchBase']?.invalid }">
+              <div *ngIf="configForm.controls['searchBase']?.touched && configForm.controls['searchBase']?.invalid" class="invalid-feedback">
+                Search Base is required
+              </div>
+              <small class="form-text text-muted">e.g., ou=users,dc=example,dc=com</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="searchFilter">Search Filter</label>
+              <input type="text" id="searchFilter" formControlName="searchFilter" class="form-control">
+              <small class="form-text text-muted">e.g., (uid={0}) or (sAMAccountName={0})</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userIdAttribute">User ID Attribute</label>
+              <input type="text" id="userIdAttribute" formControlName="userIdAttribute" class="form-control">
+              <small class="form-text text-muted">LDAP attribute for user ID (e.g., uid, sAMAccountName)</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userEmailAttribute">User Email Attribute</label>
+              <input type="text" id="userEmailAttribute" formControlName="userEmailAttribute" class="form-control">
+              <small class="form-text text-muted">LDAP attribute for email (e.g., mail)</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userFirstNameAttribute">User First Name Attribute</label>
+              <input type="text" id="userFirstNameAttribute" formControlName="userFirstNameAttribute" class="form-control">
+              <small class="form-text text-muted">LDAP attribute for first name (e.g., givenName)</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="userLastNameAttribute">User Last Name Attribute</label>
+              <input type="text" id="userLastNameAttribute" formControlName="userLastNameAttribute" class="form-control">
+              <small class="form-text text-muted">LDAP attribute for last name (e.g., sn)</small>
+            </div>
+          </ng-container>
+        </form>
+      </div>
+      
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="providerForm.invalid || configForm.invalid || isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm mr-1"></span>
+          {{ isEditing ? 'Update' : 'Create' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

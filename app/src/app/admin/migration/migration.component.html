@@ -1,0 +1,51 @@
+<div class="migration-container">
+  <div class="header">
+    <h2>Migration Tools</h2>
+    <p>Tools for migrating data from external systems</p>
+  </div>
+  
+  <div class="migration-card">
+    <div class="card-header">
+      <h3>Keycloak User Migration</h3>
+      <p>Migrate users from Keycloak to the new authentication system</p>
+    </div>
+    
+    <div class="card-body">
+      <p>
+        This tool will import users from your Keycloak instance into the new authentication system.
+        Users will be created with their existing username, email, and other profile information.
+        External identity provider connections will also be preserved.
+      </p>
+      
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+          <strong>Warning:</strong> This operation cannot be undone. Make sure you have configured the Keycloak connection
+          properly in the application configuration before proceeding.
+        </div>
+      </div>
+      
+      <div *ngIf="migrationResult" class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <div>
+          <strong>Success:</strong> {{ migrationResult.message }}
+          <div>Migrated {{ migrationResult.count }} users.</div>
+        </div>
+      </div>
+      
+      <div *ngIf="error" class="alert alert-danger">
+        <i class="fas fa-times-circle"></i>
+        <div>
+          <strong>Error:</strong> {{ error }}
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-footer">
+      <button class="btn btn-primary" (click)="migrateKeycloakUsers()" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm mr-1"></span>
+        Migrate Users from Keycloak
+      </button>
+    </div>
+  </div>
+</div>

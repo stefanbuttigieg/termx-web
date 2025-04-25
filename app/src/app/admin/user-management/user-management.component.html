@@ -1,0 +1,105 @@
+<div class="user-management-container">
+  <div class="user-list-container">
+    <div class="header">
+      <h2>User Management</h2>
+      <button class="btn btn-primary" (click)="createNewUser()">
+        <i class="fas fa-plus"></i> New User
+      </button>
+    </div>
+    
+    <div class="user-list" *ngIf="!isLoading; else loading">
+      <div class="user-item" *ngFor="let user of users" 
+           [class.selected]="selectedUser?.id === user.id"
+           (click)="selectUser(user)">
+        <div class="user-info">
+          <div class="username">{{ user.username }}</div>
+          <div class="email">{{ user.email }}</div>
+        </div>
+        <div class="user-status" [class.active]="user.status === 'ACTIVE'">
+          {{ user.status }}
+        </div>
+        <button class="btn btn-danger btn-sm" (click)="deleteUser(user); $event.stopPropagation()">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      
+      <div *ngIf="users.length === 0" class="no-users">
+        No users found
+      </div>
+    </div>
+    
+    <ng-template #loading>
+      <div class="loading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span>Loading users...</span>
+      </div>
+    </ng-template>
+  </div>
+  
+  <div class="user-form-container" *ngIf="selectedUser || !isEditing">
+    <h3>{{ isEditing ? 'Edit User' : 'Create User' }}</h3>
+    
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" formControlName="username" class="form-control" 
+               [ngClass]="{ 'is-invalid': userForm.controls['username'].touched && userForm.controls['username'].invalid }">
+        <div *ngIf="userForm.controls['username'].touched && userForm.controls['username'].invalid" class="invalid-feedback">
+          <div *ngIf="userForm.controls['username'].errors?.['required']">Username is required</div>
+          <div *ngIf="userForm.controls['username'].errors?.['minlength']">Username must be at least 3 characters</div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" formControlName="email" class="form-control"
+               [ngClass]="{ 'is-invalid': userForm.controls['email'].touched && userForm.controls['email'].invalid }">
+        <div *ngIf="userForm.controls['email'].touched && userForm.controls['email'].invalid" class="invalid-feedback">
+          <div *ngIf="userForm.controls['email'].errors?.['required']">Email is required</div>
+          <div *ngIf="userForm.controls['email'].errors?.['email']">Please enter a valid email</div>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" formControlName="firstName" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" formControlName="lastName" class="form-control">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">{{ isEditing ? 'New Password (leave blank to keep current)' : 'Password' }}</label>
+        <input type="password" id="password" formControlName="password" class="form-control"
+               [ngClass]="{ 'is-invalid': userForm.controls['password'].touched && userForm.controls['password'].invalid }">
+        <div *ngIf="userForm.controls['password'].touched && userForm.controls['password'].invalid" class="invalid-feedback">
+          <div *ngIf="userForm.controls['password'].errors?.['required']">Password is required</div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" formControlName="status" class="form-control">
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+          <option value="LOCKED">Locked</option>
+          <option value="PENDING_ACTIVATION">Pending Activation</option>
+        </select>
+      </div>
+      
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm mr-1"></span>
+          {{ isEditing ? 'Update' : 'Create' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
